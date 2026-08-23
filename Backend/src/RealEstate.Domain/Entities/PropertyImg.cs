@@ -1,11 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using RealEstate.Domain.Common;
 
-namespace RealEstate.Domain.Entities
+
+namespace RealEstate.Domain.Entities;
+
+public class PropertyImg : AuditableEntity
 {
-    public class PropertyImg
+    public string ImgUrl { get;  set; } = string.Empty;
+
+    public int PropertyId { get; set; }
+
+    public Property Property { get; set; }
+
+    public PropertyImg()
     {
-        public string? ImgUrl { get; private set; }
+        
     }
 }

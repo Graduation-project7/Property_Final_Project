@@ -1,19 +1,19 @@
 ﻿using RealEstate.Domain.Common;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace RealEstate.Domain.Entities
+
+namespace RealEstate.Domain.Entities;
+
+public class Favorite: AuditableEntity
 {
-    public class Favorite: AuditableEntity
+    public Favorite()
     {
-        public Favorite(int id) : base(id)
-        {
-        }
-
-        public int UserId { get; set; }
-        public int PropertyId { get; set; }
-
-
     }
+
+
+    public int UserId { get; set; }
+    public User User { get; set; }
+
+    public int PropertyId { get; set; }
+    public Property Property { get; set; }
+
 }
