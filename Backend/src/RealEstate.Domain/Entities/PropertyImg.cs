@@ -9,6 +9,8 @@ public class PropertyImg : AuditableEntity
 
     public int PropertyId { get; set; }
 
+    public bool IsPrimary { get; set; } 
+
     public Property Property { get; set; }
 
     public PropertyImg()
