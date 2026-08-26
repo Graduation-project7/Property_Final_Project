@@ -6,7 +6,6 @@ using RealEstate.Application.DTOs.Auth;
 using RealEstate.Application.Interfaces;
 using RealEstate.Domain.Entities;
 using RealEstate.Infrastructure.Identity;
-using RealEstate.Infrastructure.Persistence;
 
 namespace RealEstate.Infrastructure.Services;
 
@@ -16,13 +15,13 @@ public class AuthService : IAuthService
 
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ITokenService _tokenService;
-    private readonly AppDbContext _context;
+    private readonly IApplicationDbContext _context;
     private readonly JwtSettings _jwtSettings;
 
     public AuthService(
         UserManager<ApplicationUser> userManager,
         ITokenService tokenService,
-        AppDbContext context,
+        IApplicationDbContext context,
         IOptions<JwtSettings> jwtSettings)
     {
         _userManager = userManager;
@@ -49,8 +48,9 @@ public class AuthService : IAuthService
         if (!result.Succeeded)
             throw new InvalidOperationException(string.Join(", ", result.Errors.Select(e => e.Description)));
 
-        // كل تسجيل جديد بياخد دور Customer تلقائياً — ما في تسجيل عام لـ Admin
-        await _userManager.AddToRoleAsync(identityUser, DefaultRole);
+        var roleResult = await _userManager.AddToRoleAsync(identityUser, DefaultRole);
+        if (!roleResult.Succeeded)
+            throw new InvalidOperationException(string.Join(", ", roleResult.Errors.Select(e => e.Description)));
 
         _context.UserProfiles.Add(new User
         {
@@ -73,7 +73,6 @@ public class AuthService : IAuthService
         if (user is null || !await _userManager.CheckPasswordAsync(user, request.Password))
             throw new UnauthorizedAccessException("Invalid credentials.");
 
-        // جلسة وحدة بس: ألغِ أي refresh token فعّال سابق
         var activeTokens = await _context.RefreshTokens
             .Where(rt => rt.UserId == user.Id && rt.RevokedAt == null)
             .ToListAsync();
@@ -87,8 +86,10 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> RefreshTokenAsync(string refreshToken)
     {
+        var incomingHash = _tokenService.HashToken(refreshToken);
+
         var stored = await _context.RefreshTokens
-            .FirstOrDefaultAsync(rt => rt.Token == refreshToken);
+            .FirstOrDefaultAsync(rt => rt.TokenHash == incomingHash);
 
         if (stored is null || !stored.IsActive)
             throw new UnauthorizedAccessException("Invalid or expired refresh token.");
@@ -102,6 +103,8 @@ public class AuthService : IAuthService
         var roles = await _userManager.GetRolesAsync(user);
         return await IssueTokensAsync(user.Id, user.Email!, roles);
     }
+
+
 
     public async Task LogoutAsync(int userId)
     {
@@ -117,17 +120,20 @@ public class AuthService : IAuthService
 
     private async Task<AuthResponse> IssueTokensAsync(int userId, string email, IEnumerable<string> roles)
     {
-        var (accessToken, expiresAt) = _tokenService.GenerateAccessToken(userId, email, roles.ToList());
+        var accessTokenResult = _tokenService.GenerateAccessToken(userId, email, roles.ToList());
         var refreshTokenValue = _tokenService.GenerateRefreshToken();
+        var refreshTokenHash = _tokenService.HashToken(refreshTokenValue);
 
         _context.RefreshTokens.Add(new RefreshToken
         {
             UserId = userId,
-            Token = refreshTokenValue,
+            TokenHash = refreshTokenHash,
             ExpiresAt = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationDays)
         });
 
         await _context.SaveChangesAsync();
-        return new AuthResponse(accessToken, refreshTokenValue, expiresAt);
+
+        return new AuthResponse(accessTokenResult.Token, refreshTokenValue, accessTokenResult.ExpiresAt);
     }
+
 }

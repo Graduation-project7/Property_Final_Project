@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using RealEstate.Application.Interfaces;
 using RealEstate.Domain.Entities;
 using RealEstate.Infrastructure.Identity;
 
 namespace RealEstate.Infrastructure.Persistence
 {
-    public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, int>
+    public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, int>, IApplicationDbContext
     {
         public AppDbContext(DbContextOptions options) : base(options) { }
 

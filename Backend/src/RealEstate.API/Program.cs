@@ -33,6 +33,7 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddJwtAuthentication(builder.Configuration);
 
+
 var app = builder.Build();
 
 // Seed roles (Admin, Customer) عند الإقلاع

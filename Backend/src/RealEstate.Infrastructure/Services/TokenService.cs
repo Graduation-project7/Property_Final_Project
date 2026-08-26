@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using RealEstate.Application.Common.Settings;
+using RealEstate.Application.DTOs.Auth;
 using RealEstate.Application.Interfaces;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -16,9 +17,13 @@ public class TokenService : ITokenService
     public TokenService(IOptions<JwtSettings> jwtSettings)
     {
         _jwtSettings = jwtSettings.Value;
+        if (string.IsNullOrWhiteSpace(_jwtSettings.SecretKey) ||
+            Encoding.UTF8.GetByteCount(_jwtSettings.SecretKey) < 32)
+            throw new InvalidOperationException(
+                "JwtSettings:SecretKey must be at least 32 bytes.");
     }
 
-    public (string Token, DateTime ExpiresAt) GenerateAccessToken(int userId, string email, IList<string> roles)
+    public TokenServiceResult GenerateAccessToken(int userId, string email, IList<string> roles)
     {
         var claims = new List<Claim>
         {
@@ -40,9 +45,15 @@ public class TokenService : ITokenService
             expires: expiresAt,
             signingCredentials: creds);
 
-        return (new JwtSecurityTokenHandler().WriteToken(token), expiresAt);
+        var tokenValue = new JwtSecurityTokenHandler().WriteToken(token);
+        return new TokenServiceResult(tokenValue, expiresAt);
     }
 
     public string GenerateRefreshToken()
         => Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+    public string HashToken(string token)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
+        return Convert.ToBase64String(bytes);
+    }
 }

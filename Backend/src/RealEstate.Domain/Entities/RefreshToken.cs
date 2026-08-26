@@ -4,7 +4,7 @@ namespace RealEstate.Domain.Entities;
 
 public class RefreshToken : AuditableEntity
 {
-    public string Token { get; set; } = string.Empty;
+    public string TokenHash { get; set; } = string.Empty;
     public int UserId { get; set; }
     public User User { get; set; } = null!;
     public DateTime ExpiresAt { get; set; }

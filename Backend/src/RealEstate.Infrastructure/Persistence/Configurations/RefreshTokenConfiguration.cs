@@ -11,11 +11,11 @@ namespace RealEstate.Infrastructure.Persistence.Configurations
             builder.ToTable("RefreshTokens");
             builder.HasKey(r => r.Id);
 
-            builder.Property(r => r.Token)
+            builder.Property(r => r.TokenHash)
                 .IsRequired()
                 .HasMaxLength(200);
 
-            builder.HasIndex(r => r.Token).IsUnique();
+            builder.HasIndex(r => r.TokenHash).IsUnique();
 
             builder.HasOne(r => r.User)
                 .WithMany()

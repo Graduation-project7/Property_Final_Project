@@ -1,8 +1,12 @@
-﻿namespace RealEstate.Application.Interfaces
+﻿using RealEstate.Application.DTOs.Auth;
+
+namespace RealEstate.Application.Interfaces
 {
     public interface ITokenService
     {
-        (string Token, DateTime ExpiresAt) GenerateAccessToken(int userId, string email, IList<string> roles);
+        TokenServiceResult GenerateAccessToken(int userId, string email, IList<string> roles);
         string GenerateRefreshToken();
+        string HashToken(string token);
+
     }
 }
